@@ -1,38 +1,26 @@
-import { App, PluginSettingTab, Setting } from 'obsidian';
-import MyPlugin from './main';
+import { PluginSettingTab, SettingDefinitionItem } from 'obsidian';
 
-export interface MyPluginSettings {
-	mySetting: string;
+export interface ClickUpTaskConnectSettings {
+	apiToken: string;
 }
 
-export const DEFAULT_SETTINGS: MyPluginSettings = {
-	mySetting: 'default',
+export const DEFAULT_SETTINGS: ClickUpTaskConnectSettings = {
+	apiToken: '',
 };
 
-export class SampleSettingTab extends PluginSettingTab {
-	plugin: MyPlugin;
-
-	constructor(app: App, plugin: MyPlugin) {
-		super(app, plugin);
-		this.plugin = plugin;
-	}
-
-	display(): void {
-		const { containerEl } = this;
-
-		containerEl.empty();
-
-		new Setting(containerEl)
-			.setName('Settings #1')
-			.setDesc("It's a secret")
-			.addText((text) =>
-				text
-					.setPlaceholder('Enter your secret')
-					.setValue(this.plugin.settings.mySetting)
-					.onChange(async (value) => {
-						this.plugin.settings.mySetting = value;
-						await this.plugin.saveSettings();
-					}),
-			);
+export class ClickUpTaskConnectSettingTab extends PluginSettingTab {
+	getSettingDefinitions(): SettingDefinitionItem[] {
+		return [
+			{
+				name: 'API token',
+				desc: 'Personal API token from ClickUp → Settings → Apps.',
+				aliases: ['clickup', 'token', 'key'],
+				control: {
+					type: 'text',
+					key: 'apiToken',
+					placeholder: 'pk_...',
+				},
+			},
+		];
 	}
 }

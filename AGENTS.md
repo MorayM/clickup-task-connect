@@ -1,19 +1,18 @@
-# Obsidian community plugin
+# ClickUp Task Connect
 
 ## Project overview
 
-- Target: Obsidian Community Plugin (TypeScript → bundled JavaScript).
+- Obsidian community plugin (id `clickup-task-connect`) that connects notes to ClickUp tasks via the ClickUp API.
+- Target: Obsidian Community Plugin (TypeScript → bundled JavaScript), `minAppVersion` 1.13.0.
 - Entry point: `src/main.ts` compiled to `main.js` and loaded by Obsidian.
 - Required release artifacts: `main.js`, `manifest.json`, and optional `styles.css`.
 
 ## Environment & tooling
 
-- Node.js: use current LTS (Node 18+ recommended).
-- **Package manager: npm** (required for this sample - `package.json` defines npm scripts and dependencies).
-- **Bundler: esbuild** (required for this sample - `esbuild.config.mjs` and build scripts depend on it). Alternative bundlers like Rollup or webpack are acceptable for other projects if they bundle all external dependencies into `main.js`.
+- Node.js: use current LTS (CI runs Node 20, 22 and 24).
+- **Package manager: npm** (`package.json` defines npm scripts and dependencies).
+- **Bundler: esbuild** (`esbuild.config.mjs` bundles everything into `main.js`).
 - Types: `obsidian` type definitions.
-
-**Note**: This sample project has specific technical dependencies on npm and esbuild. If you're creating a plugin from scratch, you can choose different tools, but you'll need to replace the build configuration accordingly.
 
 ### Install
 
@@ -89,6 +88,7 @@ npm run build
 
 - Any user-facing commands should be added via `this.addCommand(...)`.
 - If the plugin has configuration, provide a settings tab and sensible defaults.
+- Settings tabs use the declarative API (`getSettingDefinitions()`, Obsidian 1.13+) so settings appear in settings search. Don't implement `display()`. `PluginSettingTab` reads/writes `this.plugin.settings` by control `key` automatically.
 - Persist settings using `this.loadData()` / `this.saveData()`.
 - Use stable command IDs; avoid renaming once released.
 
@@ -103,6 +103,7 @@ npm run build
 
 Follow Obsidian's **Developer Policies** and **Plugin Guidelines**. In particular:
 
+- The ClickUp API token is stored in the plugin's `data.json` (gitignored). Never log it or send it anywhere except the ClickUp API.
 - Default to local/offline operation. Only make network requests when essential to the feature.
 - No hidden telemetry. If you collect optional analytics or call third-party services, require explicit opt-in and document clearly in `README.md` and in settings.
 - Never execute remote code, fetch and eval scripts, or auto-update plugin code outside of normal releases.
@@ -263,6 +264,7 @@ this.registerInterval(
 ## References
 
 - Obsidian sample plugin: https://github.com/obsidianmd/obsidian-sample-plugin
+- ClickUp API: https://developer.clickup.com
 - API documentation: https://docs.obsidian.md
 - Developer policies: https://docs.obsidian.md/Developer+policies
 - Plugin guidelines: https://docs.obsidian.md/Plugins/Releasing/Plugin+guidelines
