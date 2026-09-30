@@ -103,7 +103,7 @@ npm run build
 
 Follow Obsidian's **Developer Policies** and **Plugin Guidelines**. In particular:
 
-- The ClickUp API token is stored in the plugin's `data.json` (gitignored). Never log it or send it anywhere except the ClickUp API.
+- The ClickUp API token is kept in Obsidian's secret storage (`app.secretStorage`); `data.json` stores only the secret's name. Never log the token or send it anywhere except the ClickUp API.
 - Default to local/offline operation. Only make network requests when essential to the feature.
 - No hidden telemetry. If you collect optional analytics or call third-party services, require explicit opt-in and document clearly in `README.md` and in settings.
 - Never execute remote code, fetch and eval scripts, or auto-update plugin code outside of normal releases.
