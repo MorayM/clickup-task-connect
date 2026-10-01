@@ -1,4 +1,6 @@
-import { App, PluginSettingTab, SecretComponent, SettingDefinitionItem } from 'obsidian';
+import { App, Notice, PluginSettingTab, SecretComponent, SettingDefinitionItem } from 'obsidian';
+import { testConnection } from './engine/engine';
+import { connectionMessage, errorMessage } from './feedback';
 import { normalizeFolder } from './engine/folder';
 import type { EngineSettings } from './engine/types';
 import type ClickUpTaskConnectPlugin from './main';
@@ -49,6 +51,11 @@ export class ClickUpTaskConnectSettingTab extends PluginSettingTab {
 		super(app, plugin);
 	}
 
+	private async testConnection(): Promise<void> {
+		const result = await testConnection(this.plugin.host, this.plugin.engineSettings());
+		new Notice(result.ok ? connectionMessage(result) : errorMessage(result.error));
+	}
+
 	getSettingDefinitions(): SettingDefinitionItem[] {
 		return [
 			{
@@ -75,6 +82,12 @@ export class ClickUpTaskConnectSettingTab extends PluginSettingTab {
 						desc: 'Leave blank to use your only workspace.',
 						aliases: ['team', 'workspace'],
 						control: { type: 'text', key: 'workspaceId', placeholder: '1234567' },
+					},
+					{
+						name: 'Test connection',
+						desc: 'Check which ClickUp user and workspace the token connects to.',
+						aliases: ['check', 'verify'],
+						action: () => void this.testConnection(),
 					},
 				],
 			},

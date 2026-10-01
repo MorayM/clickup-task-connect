@@ -1,6 +1,6 @@
 import { Notice } from 'obsidian';
 import { refresh, type RefreshMode } from './engine/engine';
-import { errorMessage, summaryMessage } from './feedback';
+import { errorNotice, summaryMessage } from './feedback';
 import type ClickUpTaskConnectPlugin from './main';
 
 /** Runs refreshes one at a time and turns their results into notices. */
@@ -16,7 +16,7 @@ export class RefreshRunner {
 		try {
 			const result = await refresh(this.plugin.host, this.plugin.engineSettings(), mode);
 			if (result.ok) new Notice(summaryMessage(result.summary));
-			else new Notice(`ClickUp: ${errorMessage(result.error)}`);
+			else new Notice(errorNotice(result.error));
 		} finally {
 			this.running = false;
 		}

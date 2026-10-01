@@ -4,6 +4,9 @@ import type { HostPort, HttpResponse } from './host';
 import type { ClickUpTask, EngineError, Workspace } from './types';
 
 const BASE = 'https://api.clickup.com/api/v2';
+const PAGE_SIZE = 100;
+/** Guards against an API that never signals the last page. */
+const MAX_PAGES = 500;
 
 type Call<T> = { ok: true; value: T } | { ok: false; error: EngineError };
 
@@ -39,13 +42,20 @@ export class ClickUpClient {
 		};
 	}
 
+	/** Every page of the user's open assigned tasks, or the first error. */
 	async listAssignedTasks(workspaceId: string, userId: number): Promise<Call<ClickUpTask[]>> {
-		const url =
-			`${BASE}/team/${encodeURIComponent(workspaceId)}/task?assignees%5B%5D=${userId}` +
-			`&subtasks=true&include_markdown_description=true&page=0`;
-		const res = await this.get(url);
-		if (!res.ok) return res;
-		return { ok: true, value: tasksOf(res.value.json) };
+		const all: ClickUpTask[] = [];
+		for (let page = 0; page < MAX_PAGES; page++) {
+			const url =
+				`${BASE}/team/${encodeURIComponent(workspaceId)}/task?assignees%5B%5D=${userId}` +
+				`&subtasks=true&include_markdown_description=true&page=${page}`;
+			const res = await this.get(url);
+			if (!res.ok) return res;
+			const tasks = tasksOf(res.value.json);
+			all.push(...tasks);
+			if (field(res.value.json, 'last_page') === true || tasks.length < PAGE_SIZE) break;
+		}
+		return { ok: true, value: all };
 	}
 
 	private async get(url: string): Promise<Call<HttpResponse>> {
