@@ -1,1 +1,4 @@
-/* Styles for ClickUp Task Connect. */
+.clickup-task-connect-error {
+	color: var(--text-error);
+	margin-bottom: var(--size-4-2);
+}

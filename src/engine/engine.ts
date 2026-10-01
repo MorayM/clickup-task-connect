@@ -2,6 +2,7 @@
 
 export { refresh } from './refresh';
 export { testConnection } from './test-connection';
+export { importTask } from './import-task';
 export type { ConnectionReport } from './test-connection';
 export type { RefreshMode, RefreshSummary } from './refresh';
 export type { HostPort } from './host';
