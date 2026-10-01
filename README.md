@@ -39,7 +39,7 @@ The token is kept in Obsidian's secret storage, which is local to each device an
 | **Import task by ID** | Creates or updates the task note for any task, by ID or by pasting its ClickUp link, then opens it. Works for closed tasks and colleagues' tasks, which a refresh never fetches. |
 | **Insert link to task** | Picks one of your assigned task notes (soonest due first) and inserts a link to it at the cursor, in your vault's link format. |
 
-A manual refresh ends with a summary notice, such as "ClickUp: 2 new, 1 renamed, 1 no longer assigned" or "ClickUp: up to date". Interval refreshes are silent unless something goes wrong, and each error is shown once until a refresh succeeds again.
+A manual refresh ends with a summary notice, such as "ClickUp: 2 new, 1 renamed, 1 no longer assigned" or "ClickUp: up to date". Interval refreshes are silent unless something goes wrong, and each error is shown once until a refresh (manual or interval) succeeds again.
 
 ## How task notes work
 
@@ -99,7 +99,7 @@ Without a scaffold note, new task notes start with:
 ## Notes
 ```
 
-To use your own layout, set **Scaffold note** to any note in your vault. If that note is missing when a task note would be created, no new notes are created (existing ones are still updated) until it's back.
+To use your own layout, set **Scaffold note** to any note in your vault. If that note is missing, or its frontmatter isn't valid YAML, when a task note would be created, no new notes are created (existing ones are still updated) until it's fixed.
 
 ## Placeholder reference
 

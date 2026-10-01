@@ -7,5 +7,6 @@ export { folderHasTaskNotes, listAssignedTaskNotes } from './assigned-notes';
 export type { AssignedTaskNote } from './assigned-notes';
 export type { ConnectionReport } from './test-connection';
 export type { RefreshMode, RefreshSummary } from './refresh';
-export type { HostPort } from './host';
-export type { EngineError, EngineSettings, Result } from './types';
+export type { Frontmatter, HostPort, HttpRequest, HttpResponse, NoteInfo } from './host';
+export { normalizeFolder } from './folder';
+export type { EngineError, EngineSettings, Result, Workspace } from './types';

@@ -3,7 +3,7 @@ import type { Frontmatter, HostPort, HttpRequest, HttpResponse, NoteInfo } from 
 
 type Route = HttpResponse | 'network-error' | (() => HttpResponse | 'network-error');
 
-const FRONTMATTER = /^---\r?\n([\s\S]*?)\r?\n?---(?:\r?\n|$)/;
+const FRONTMATTER = /^---\r?\n(?:([\s\S]*?)\r?\n)?---[ \t]*(?:\r?\n|$)/;
 
 export function splitNote(text: string): { frontmatter: Frontmatter | null; body: string } {
 	const match = FRONTMATTER.exec(text);
@@ -33,6 +33,8 @@ export class FakeHost implements HostPort {
 	clock = new Date('2026-10-01T09:00:00Z');
 	zone = 'Europe/London';
 	failWrites = new Set<string>();
+	/** Paths whose frontmatter updates fail, while creating them still works. */
+	failFrontmatterWrites = new Set<string>();
 	unreadable = new Set<string>();
 
 	/** Registers a canned response for an exact URL. */
@@ -102,7 +104,7 @@ export class FakeHost implements HostPort {
 	async processFrontMatter(path: string, fn: (frontmatter: Frontmatter) => void): Promise<void> {
 		const text = this.files.get(path);
 		if (text === undefined) throw new Error(`No file at ${path}`);
-		if (this.failWrites.has(path)) throw new Error('Disk full');
+		if (this.failWrites.has(path) || this.failFrontmatterWrites.has(path)) throw new Error('Disk full');
 		const { frontmatter, body } = splitNote(text);
 		const next = frontmatter ?? {};
 		fn(next);
@@ -125,6 +127,10 @@ export class FakeHost implements HostPort {
 
 	parseYaml(text: string): unknown {
 		return parse(text);
+	}
+
+	stringifyYaml(value: unknown): string {
+		return stringify(value);
 	}
 
 	now(): Date {

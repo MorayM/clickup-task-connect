@@ -1,7 +1,7 @@
 // Obsidian adapter for the engine's host port.
 
-import { App, TFile, TFolder, parseYaml, requestUrl } from 'obsidian';
-import type { Frontmatter, HostPort, HttpRequest, HttpResponse, NoteInfo } from './engine/host';
+import { App, TFile, TFolder, parseYaml, requestUrl, stringifyYaml } from 'obsidian';
+import type { Frontmatter, HostPort, HttpRequest, HttpResponse, NoteInfo } from './engine/engine';
 
 export class ObsidianHost implements HostPort {
 	constructor(
@@ -66,6 +66,10 @@ export class ObsidianHost implements HostPort {
 
 	parseYaml(text: string): unknown {
 		return parseYaml(text);
+	}
+
+	stringifyYaml(value: unknown): string {
+		return stringifyYaml(value);
 	}
 
 	now(): Date {

@@ -1,6 +1,6 @@
 import { Plugin } from 'obsidian';
 import { registerCommands } from './commands';
-import type { EngineSettings } from './engine/types';
+import type { EngineSettings } from './engine/engine';
 import { ObsidianHost } from './obsidian-host';
 import { RefreshRunner } from './refresh-runner';
 import { RefreshScheduler } from './refresh-scheduler';

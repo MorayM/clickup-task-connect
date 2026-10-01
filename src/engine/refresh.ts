@@ -7,7 +7,7 @@ import { normalizeFolder } from './folder';
 import { buildIndex } from './note-index';
 import { deriveState, managedProperties } from './properties';
 import { createTaskNote, newNotePath, updateTaskNote } from './task-notes';
-import { loadScaffold, type Scaffold } from './scaffold';
+import { loadScaffold } from './scaffold';
 import type { EngineError, EngineSettings, Result } from './types';
 
 export type RefreshMode = 'manual' | 'interval';
@@ -27,8 +27,8 @@ export interface RefreshSummary {
 	/** Task IDs claimed by more than one note. Those tasks are left alone. */
 	duplicates: number;
 	failures: WriteFailure[];
-	/** Set when new notes were skipped because the scaffold note couldn't be read. */
-	scaffoldMissing?: string;
+	/** Why new notes were skipped because of the scaffold note, if they were. */
+	scaffoldError?: EngineError;
 	/** Why classifying dropped tasks stopped early, if it did. */
 	interrupted?: EngineError;
 }
@@ -64,7 +64,7 @@ export async function refresh(
 		failures: [],
 	};
 	const zone = host.timeZone();
-	let scaffold: Scaffold | null | undefined;
+	let scaffold: Awaited<ReturnType<typeof loadScaffold>> | undefined;
 	for (const notes of index.values()) if (notes.length > 1) summary.duplicates++;
 
 	for (const task of listing.value) {
@@ -80,11 +80,11 @@ export async function refresh(
 			} else {
 				// Loaded on the first create only. A missing scaffold blocks every create in this run.
 				if (scaffold === undefined) scaffold = await loadScaffold(host, settings.scaffoldPath);
-				if (scaffold === null) {
-					summary.scaffoldMissing = settings.scaffoldPath;
+				if (!scaffold.ok) {
+					summary.scaffoldError = scaffold.error;
 					continue;
 				}
-				await createTaskNote(host, folder, task, props, scaffold);
+				await createTaskNote(host, folder, task, props, scaffold.scaffold);
 				summary.created++;
 			}
 		} catch (e) {

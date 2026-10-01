@@ -1,8 +1,6 @@
 import { App, Notice, PluginSettingTab, SecretComponent, SettingDefinitionItem } from 'obsidian';
-import { folderHasTaskNotes, testConnection } from './engine/engine';
+import { folderHasTaskNotes, normalizeFolder, testConnection, type EngineSettings } from './engine/engine';
 import { connectionMessage, errorMessage } from './feedback';
-import { normalizeFolder } from './engine/folder';
-import type { EngineSettings } from './engine/types';
 import type ClickUpTaskConnectPlugin from './main';
 
 export interface ClickUpTaskConnectSettings {

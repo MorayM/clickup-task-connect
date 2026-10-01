@@ -40,8 +40,8 @@ export async function importTask(
 	try {
 		if (existing) return { ok: true, path: (await updateTaskNote(host, existing, props)).path };
 		const scaffold = await loadScaffold(host, settings.scaffoldPath);
-		if (scaffold === null) return { ok: false, error: { kind: 'scaffold-missing', path: settings.scaffoldPath } };
-		return { ok: true, path: await createTaskNote(host, folder, task, props, scaffold) };
+		if (!scaffold.ok) return scaffold;
+		return { ok: true, path: await createTaskNote(host, folder, task, props, scaffold.scaffold) };
 	} catch (e) {
 		const message = e instanceof Error ? e.message : String(e);
 		return { ok: false, error: { kind: 'write-failed', path: e instanceof PathTakenError ? e.path : path, message } };

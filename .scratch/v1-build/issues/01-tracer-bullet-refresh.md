@@ -19,3 +19,7 @@ Spec: `.scratch/v1-spec/spec.md` (Architecture, Managed properties, Refresh algo
 - [x] A second refresh updates existing notes found by `String(clickup-id).trim()` in the folder and its subfolders, without changing the body or non-managed keys, and restores any managed key the user deleted
 - [x] A manual refresh shows a summary notice with counts of new and updated notes
 - [x] Engine tests cover: first refresh creates notes, second refresh updates them in place, user frontmatter is preserved, and a deleted managed key is restored
+
+## Comments
+
+- New task notes are written in a single `createFile` call with the frontmatter (scaffold keys, then managed properties) already in place, rather than create-then-`processFrontMatter`. A failed second step could otherwise leave a note without `clickup-id`, blocking that task's filename forever. The host port gained `stringifyYaml` for this. Updates to existing notes still go through `processFrontMatter`.

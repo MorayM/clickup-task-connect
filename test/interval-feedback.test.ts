@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { RefreshSummary } from '../src/engine/engine';
-import type { EngineError } from '../src/engine/types';
+import type { EngineError, RefreshSummary } from '../src/engine/engine';
 import { IntervalNotices } from '../src/feedback';
 
 const summary = (extra: Partial<RefreshSummary> = {}): RefreshSummary => ({
@@ -33,6 +32,19 @@ describe('interval refresh notices', () => {
 		expect(first).toBe("ClickUp: couldn't reach ClickUp");
 		expect(repeat).toBeNull();
 		expect(afterSuccess).toBe("ClickUp: couldn't reach ClickUp");
+	});
+
+	it('counts a successful manual refresh as the success in between', () => {
+		const notices = new IntervalNotices();
+		notices.noticeFor(failure({ kind: 'offline' }));
+
+		notices.recordManual(failure({ kind: 'rate-limited', waitSeconds: 3 }));
+		const afterManualFailure = notices.noticeFor(failure({ kind: 'offline' }));
+		notices.recordManual(success);
+		const afterManualSuccess = notices.noticeFor(failure({ kind: 'offline' }));
+
+		expect(afterManualFailure).toBeNull();
+		expect(afterManualSuccess).toBe("ClickUp: couldn't reach ClickUp");
 	});
 
 	it('shows a different error straight away', () => {

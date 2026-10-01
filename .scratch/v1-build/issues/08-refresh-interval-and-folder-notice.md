@@ -21,5 +21,5 @@ Spec: `.scratch/v1-spec/spec.md` (Settings schema → Refresh interval, folder n
 
 ## Comments
 
-- The "show each error once until a success" rule lives in `IntervalNotices` (`src/feedback.ts`) and is covered by `test/interval-feedback.test.ts`. Errors are keyed by kind, so "rate limited, 20 s" then "rate limited, 5 s" shows once. An interrupted classification and a missing scaffold count as errors for interval runs; per-note write failures are only reported by manual refreshes.
+- The "show each error once until a success" rule lives in `IntervalNotices` (`src/feedback.ts`) and is covered by `test/interval-feedback.test.ts`. Errors are keyed by kind, so "rate limited, 20 s" then "rate limited, 5 s" shows once. An interrupted classification and a missing scaffold count as errors for interval runs; per-note write failures are only reported by manual refreshes. A successful manual refresh also counts as the success in between.
 - The folder baseline is the value when the tab was constructed, then the value at each `hide()`. Only the tab changes the folder, so this equals "the value when the tab was opened" without implementing `display()`.

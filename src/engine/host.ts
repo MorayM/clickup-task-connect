@@ -39,6 +39,7 @@ export interface HostPort {
 	/** Throws when the file is missing or unreadable. */
 	readText(path: string): Promise<string>;
 	parseYaml(text: string): unknown;
+	stringifyYaml(value: unknown): string;
 
 	now(): Date;
 	/** IANA time zone used for local dates, e.g. `Europe/London`. */

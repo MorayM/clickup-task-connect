@@ -117,6 +117,29 @@ describe('custom scaffold', () => {
 	});
 });
 
+describe('scaffold frontmatter', () => {
+	it('treats a scaffold opening with a horizontal rule and no closing line as body only', async () => {
+		const scaffold = '---\n\nSee below ---\n{=ctc:id=}';
+
+		const { note } = await renderWith(scaffold);
+
+		expect(note?.body).toBe('---\n\nSee below ---\nabc123');
+	});
+
+	it('creates no notes and says why when the scaffold frontmatter is not valid YAML', async () => {
+		const host = withClickUp(new FakeHost(), [task({ id: 'new1', name: 'New one' })]);
+		host.addNote(SCAFFOLD, null, '---\nkey: [unclosed\n---\nBody');
+
+		const result = await refresh(host, settings({ scaffoldPath: SCAFFOLD }), 'manual');
+
+		expect(result).toMatchObject({
+			ok: true,
+			summary: { created: 0, scaffoldError: { kind: 'scaffold-invalid', path: SCAFFOLD } },
+		});
+		expect(host.paths()).toEqual([SCAFFOLD]);
+	});
+});
+
 describe('missing scaffold', () => {
 	it.each([
 		['missing', (_host: FakeHost) => {}],
@@ -132,7 +155,7 @@ describe('missing scaffold', () => {
 
 		const result = await refresh(host, settings({ scaffoldPath: SCAFFOLD }), 'manual');
 
-		expect(result).toMatchObject({ ok: true, summary: { created: 0, updated: 1, scaffoldMissing: SCAFFOLD } });
+		expect(result).toMatchObject({ ok: true, summary: { created: 0, updated: 1, scaffoldError: { kind: 'scaffold-missing', path: SCAFFOLD } } });
 		expect(host.paths().filter((p) => p.startsWith('ClickUp/'))).toEqual(['ClickUp/Existing.md']);
 		expect(host.note('ClickUp/Existing.md').frontmatter?.['clickup-title']).toBe('Renamed');
 	});

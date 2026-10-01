@@ -41,6 +41,7 @@ export type EngineError =
 	| { kind: 'not-found' }
 	| { kind: 'duplicates'; paths: string[] }
 	| { kind: 'scaffold-missing'; path: string }
+	| { kind: 'scaffold-invalid'; path: string }
 	| { kind: 'write-failed'; path: string; message: string };
 
 export type Result<T> = ({ ok: true } & T) | { ok: false; error: EngineError };

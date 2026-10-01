@@ -1,8 +1,6 @@
 // Notice text for engine results. No `obsidian` imports, so the wording rules stay testable.
 
-import type { EngineError } from './engine/types';
-import type { RefreshSummary } from './engine/refresh';
-import type { ConnectionReport } from './engine/test-connection';
+import type { ConnectionReport, EngineError, RefreshSummary, Result } from './engine/engine';
 
 export function errorMessage(error: EngineError): string {
 	switch (error.kind) {
@@ -32,6 +30,8 @@ export function errorMessage(error: EngineError): string {
 			return `${error.paths.length} notes have this task ID: ${error.paths.join(', ')}`;
 		case 'scaffold-missing':
 			return `Scaffold note not found: ${error.path}`;
+		case 'scaffold-invalid':
+			return `Scaffold note has invalid frontmatter: ${error.path}`;
 		case 'write-failed':
 			return `Couldn't write ${error.path}: ${error.message}`;
 	}
@@ -56,8 +56,8 @@ export function summaryMessage(summary: RefreshSummary): string {
 	add(summary.duplicates, summary.duplicates === 1 ? 'duplicate' : 'duplicates');
 	add(summary.failures.length, 'failed');
 	const lines = [parts.length === 0 ? 'ClickUp: up to date' : `ClickUp: ${parts.join(', ')}`];
-	if (summary.scaffoldMissing !== undefined) {
-		lines.push(`Scaffold note not found: ${summary.scaffoldMissing}. No new notes were created.`);
+	if (summary.scaffoldError) {
+		lines.push(`${errorMessage(summary.scaffoldError)}. No new notes were created.`);
 	}
 	if (summary.interrupted) {
 		lines.push(`Stopped checking dropped tasks: ${errorMessage(summary.interrupted)}`);
@@ -72,7 +72,7 @@ export function connectionMessage(report: ConnectionReport): string {
 	return `Connected as ${report.username}. Your token can see several workspaces. Set Workspace ID to one of: ${list}`;
 }
 
-type RefreshResult = { ok: true; summary: RefreshSummary } | { ok: false; error: EngineError };
+type RefreshResult = Result<{ summary: RefreshSummary }>;
 
 /**
  * Decides which interval refreshes get a notice: none on success, and each error only once
@@ -92,20 +92,23 @@ export class IntervalNotices {
 		this.lastShown = problem.key;
 		return problem.notice;
 	}
+
+	/** A manual refresh shows its own notice, but its success still counts as the success in between. */
+	recordManual(result: RefreshResult): void {
+		if (result.ok && intervalProblem(result) === null) this.lastShown = null;
+	}
 }
 
 function intervalProblem(result: RefreshResult): { key: string; notice: string } | null {
 	if (!result.ok) return { key: result.error.kind, notice: errorNotice(result.error) };
-	const { interrupted, scaffoldMissing } = result.summary;
+	const { interrupted, scaffoldError } = result.summary;
 	if (interrupted) {
 		return {
 			key: `interrupted:${interrupted.kind}`,
 			notice: `ClickUp: stopped checking dropped tasks: ${lowerFirst(errorMessage(interrupted))}`,
 		};
 	}
-	if (scaffoldMissing !== undefined) {
-		return { key: 'scaffold-missing', notice: errorNotice({ kind: 'scaffold-missing', path: scaffoldMissing }) };
-	}
+	if (scaffoldError) return { key: scaffoldError.kind, notice: errorNotice(scaffoldError) };
 	return null;
 }
 

@@ -20,5 +20,6 @@ Spec: `.scratch/v1-spec/spec.md` (Scaffold rendering, Settings schema → Scaffo
 ## Comments
 
 - The declarative `validate` callback rejects (doesn't persist) any value it returns a message for. To warn "Note not found" *and* keep the value, the scaffold validator saves the setting itself before returning the message.
-- A scaffold whose frontmatter isn't valid YAML (or isn't a mapping) is treated like a missing scaffold: no creates, same message.
+- A scaffold whose frontmatter isn't valid YAML (or isn't a mapping) blocks creates like a missing scaffold, but reports "Scaffold note has invalid frontmatter: <path>".
+- The closing `---` of scaffold frontmatter must be on its own line, so a body-only scaffold that opens with a horizontal rule isn't misread.
 - `space`: ClickUp's task payload usually carries only `space.id`, not its name, so `{=ctc:space=}` is empty unless the API includes a name. Fetching the space would cost an extra request per new note; left out pending a decision.

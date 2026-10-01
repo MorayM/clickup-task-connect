@@ -17,13 +17,13 @@ export class RefreshRunner {
 		try {
 			// Each run uses the settings as they were when it started.
 			const result = await refresh(this.plugin.host, this.plugin.engineSettings(), mode);
-			const notice =
-				mode === 'interval'
-					? this.intervalNotices.noticeFor(result)
-					: result.ok
-						? summaryMessage(result.summary)
-						: errorNotice(result.error);
-			if (notice !== null) new Notice(notice);
+			if (mode === 'interval') {
+				const notice = this.intervalNotices.noticeFor(result);
+				if (notice !== null) new Notice(notice);
+				return;
+			}
+			this.intervalNotices.recordManual(result);
+			new Notice(result.ok ? summaryMessage(result.summary) : errorNotice(result.error));
 		} finally {
 			this.running = false;
 		}

@@ -20,8 +20,9 @@ export function newNotePath(folder: string, props: ManagedProperties): string {
 }
 
 /**
- * Creates a task note from the rendered scaffold, writing the managed properties after the
- * scaffold's frontmatter so they win. Never writes to an existing file.
+ * Creates a task note from the rendered scaffold, with the managed properties after the
+ * scaffold's frontmatter so they win. The file is written once, frontmatter included, so a
+ * failure can't leave a note without its `clickup-id`. Never writes to an existing file.
  */
 export async function createTaskNote(
 	host: HostPort,
@@ -34,11 +35,10 @@ export async function createTaskNote(
 	if (host.exists(path)) throw new PathTakenError(path);
 	const rendered = renderScaffold(scaffold, placeholderValues(task, props, host.now(), host.timeZone()));
 	if (!host.exists(folder)) await host.createFolder(folder);
-	await host.createFile(path, rendered.body);
-	await host.processFrontMatter(path, (fm) => {
-		Object.assign(fm, rendered.frontmatter);
-		applyProperties(fm, props);
-	});
+	const frontmatter = { ...rendered.frontmatter };
+	applyProperties(frontmatter, props);
+	const yaml = host.stringifyYaml(frontmatter);
+	await host.createFile(path, `---\n${yaml}${yaml.endsWith('\n') ? '' : '\n'}---\n${rendered.body}`);
 	return path;
 }
 

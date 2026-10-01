@@ -129,6 +129,19 @@ describe('refresh errors', () => {
 });
 
 describe('refresh write failures', () => {
+	it('writes a new note and its properties in one go, so a note is never left without its clickup-id', async () => {
+		const host = withClickUp(new FakeHost(), [task({ id: 'abc123', name: 'New' })]);
+		host.failFrontmatterWrites.add('ClickUp/New (abc123).md');
+
+		const result = await refresh(host, settings(), 'manual');
+
+		expect(result).toMatchObject({ ok: true, summary: { created: 1, failures: [] } });
+		expect(host.note('ClickUp/New (abc123).md').frontmatter).toMatchObject({
+			'clickup-id': 'abc123',
+			'clickup-state': 'assigned',
+		});
+	});
+
 	it('keeps going when one note fails to write and reports it with its path', async () => {
 		const host = withClickUp(new FakeHost(), [
 			task({ id: 'bad1', name: 'Broken' }),

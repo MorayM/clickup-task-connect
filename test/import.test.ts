@@ -117,6 +117,15 @@ describe('importTask', () => {
 		expect(host.paths()).toEqual([]);
 	});
 
+	it('fails when the scaffold frontmatter is not valid YAML', async () => {
+		const host = hostServing('abc123', ok({ id: 'abc123', name: 'New' }));
+		host.addNote('Bad.md', null, '---\nkey: [unclosed\n---\nBody');
+
+		const result = await importTask(host, settings({ scaffoldPath: 'Bad.md' }), 'abc123');
+
+		expect(result).toEqual({ ok: false, error: { kind: 'scaffold-invalid', path: 'Bad.md' } });
+	});
+
 	it('fails when the target path is taken by another file', async () => {
 		const host = hostServing('abc123', ok({ id: 'abc123', name: 'New' }));
 		host.addNote('ClickUp/New (abc123).md', null, 'Other\n');
