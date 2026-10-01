@@ -1,5 +1,5 @@
 import { App, Notice, PluginSettingTab, SecretComponent, SettingDefinitionItem } from 'obsidian';
-import { testConnection } from './engine/engine';
+import { folderHasTaskNotes, testConnection } from './engine/engine';
 import { connectionMessage, errorMessage } from './feedback';
 import { normalizeFolder } from './engine/folder';
 import type { EngineSettings } from './engine/types';
@@ -12,27 +12,45 @@ export interface ClickUpTaskConnectSettings {
 	taskNoteFolder: string;
 	/** Blank means the default scaffold. */
 	scaffoldPath: string;
+	refreshInterval: RefreshInterval;
 }
+
+export type RefreshInterval = 'off' | '15m' | '30m' | '1h' | '4h';
+
+const MINUTE = 60_000;
+export const REFRESH_INTERVAL_MS: Record<RefreshInterval, number | null> = {
+	off: null,
+	'15m': 15 * MINUTE,
+	'30m': 30 * MINUTE,
+	'1h': 60 * MINUTE,
+	'4h': 240 * MINUTE,
+};
 
 export const DEFAULT_SETTINGS: ClickUpTaskConnectSettings = {
 	apiTokenSecret: '',
 	workspaceId: '',
 	taskNoteFolder: 'ClickUp',
 	scaffoldPath: '',
+	refreshInterval: 'off',
 };
 
 /** Keeps known keys only, falling back to defaults for anything missing or mistyped. */
 export function readSettings(data: unknown): ClickUpTaskConnectSettings {
 	const stored = (data && typeof data === 'object' ? data : {}) as Record<string, unknown>;
-	const text = (key: keyof ClickUpTaskConnectSettings) => {
+	const text = (key: Exclude<keyof ClickUpTaskConnectSettings, 'refreshInterval'>) => {
 		const value = stored[key];
 		return typeof value === 'string' ? value : DEFAULT_SETTINGS[key];
 	};
+	const interval = stored.refreshInterval;
 	return {
 		apiTokenSecret: text('apiTokenSecret'),
 		workspaceId: text('workspaceId'),
 		taskNoteFolder: text('taskNoteFolder'),
 		scaffoldPath: text('scaffoldPath'),
+		refreshInterval:
+			typeof interval === 'string' && interval in REFRESH_INTERVAL_MS
+				? (interval as RefreshInterval)
+				: DEFAULT_SETTINGS.refreshInterval,
 	};
 }
 
@@ -48,11 +66,31 @@ export function engineSettings(app: App, settings: ClickUpTaskConnectSettings): 
 }
 
 export class ClickUpTaskConnectSettingTab extends PluginSettingTab {
+	/** The folder when the tab was last opened; only the tab changes it, so it's the value at the last close. */
+	private folderWhenOpened: string;
+
 	constructor(
 		app: App,
 		private readonly plugin: ClickUpTaskConnectPlugin,
 	) {
 		super(app, plugin);
+		this.folderWhenOpened = plugin.settings.taskNoteFolder;
+	}
+
+	async setControlValue(key: string, value: unknown): Promise<void> {
+		await super.setControlValue(key, value);
+		if (key === 'refreshInterval') this.plugin.scheduler.reschedule();
+	}
+
+	hide(): void {
+		super.hide();
+		const previous = this.folderWhenOpened;
+		const current = this.plugin.settings.taskNoteFolder;
+		this.folderWhenOpened = current;
+		if (normalizeFolder(previous) === normalizeFolder(current)) return;
+		if (folderHasTaskNotes(this.plugin.host, previous)) {
+			new Notice("Existing task notes weren't moved. Move them into the new folder to keep them updated.");
+		}
 	}
 
 	/**
@@ -133,6 +171,22 @@ export class ClickUpTaskConnectSettingTab extends PluginSettingTab {
 							key: 'scaffoldPath',
 							filter: (file) => file.extension === 'md',
 							validate: (value) => this.validateScaffold(value),
+						},
+					},
+				],
+			},
+			{
+				type: 'group',
+				heading: 'Refresh',
+				items: [
+					{
+						name: 'Refresh interval',
+						desc: 'Refresh task notes in the background. Off means ClickUp is only contacted when you ask.',
+						aliases: ['interval', 'automatic', 'background', 'sync'],
+						control: {
+							type: 'dropdown',
+							key: 'refreshInterval',
+							options: { off: 'Off', '15m': '15 min', '30m': '30 min', '1h': '1 hour', '4h': '4 hours' },
 						},
 					},
 				],

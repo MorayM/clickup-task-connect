@@ -56,3 +56,9 @@ function text(fm: Frontmatter, key: string): string | null {
 	const s = String(value).trim();
 	return s === '' ? null : s;
 }
+
+/** Whether a folder (or its subfolders) holds at least one task note. */
+export function folderHasTaskNotes(host: HostPort, folderSetting: string): boolean {
+	const folder = normalizeFolder(folderSetting);
+	return folder !== null && buildIndex(host, folder).size > 0;
+}

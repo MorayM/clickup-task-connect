@@ -3,7 +3,7 @@
 export { refresh } from './refresh';
 export { testConnection } from './test-connection';
 export { importTask } from './import-task';
-export { listAssignedTaskNotes } from './assigned-notes';
+export { folderHasTaskNotes, listAssignedTaskNotes } from './assigned-notes';
 export type { AssignedTaskNote } from './assigned-notes';
 export type { ConnectionReport } from './test-connection';
 export type { RefreshMode, RefreshSummary } from './refresh';

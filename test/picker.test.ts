@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { listAssignedTaskNotes } from '../src/engine/engine';
+import { folderHasTaskNotes, listAssignedTaskNotes } from '../src/engine/engine';
 import { FakeHost } from './fake-host';
 import { settings } from './clickup-fixtures';
 
@@ -45,5 +45,17 @@ describe('listAssignedTaskNotes', () => {
 		host.indexReady = false;
 
 		expect(await listAssignedTaskNotes(host, settings())).toEqual({ ok: false, error: { kind: 'indexing' } });
+	});
+});
+
+describe('folderHasTaskNotes', () => {
+	it('is true only when the folder or its subfolders hold a note with a clickup-id', () => {
+		const host = new FakeHost()
+			.addNote('Old/Sub/t.md', { 'clickup-id': 'abc123' })
+			.addNote('Plain/n.md', { title: 'Not a task' });
+
+		expect(folderHasTaskNotes(host, 'Old')).toBe(true);
+		expect(folderHasTaskNotes(host, 'Plain')).toBe(false);
+		expect(folderHasTaskNotes(host, '/')).toBe(false);
 	});
 });

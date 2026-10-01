@@ -1,11 +1,12 @@
 import { Notice } from 'obsidian';
 import { refresh, type RefreshMode } from './engine/engine';
-import { errorNotice, summaryMessage } from './feedback';
+import { errorNotice, IntervalNotices, summaryMessage } from './feedback';
 import type ClickUpTaskConnectPlugin from './main';
 
 /** Runs refreshes one at a time and turns their results into notices. */
 export class RefreshRunner {
 	private running = false;
+	private readonly intervalNotices = new IntervalNotices();
 
 	constructor(private readonly plugin: ClickUpTaskConnectPlugin) {}
 
@@ -14,9 +15,15 @@ export class RefreshRunner {
 		if (this.running) return;
 		this.running = true;
 		try {
+			// Each run uses the settings as they were when it started.
 			const result = await refresh(this.plugin.host, this.plugin.engineSettings(), mode);
-			if (result.ok) new Notice(summaryMessage(result.summary));
-			else new Notice(errorNotice(result.error));
+			const notice =
+				mode === 'interval'
+					? this.intervalNotices.noticeFor(result)
+					: result.ok
+						? summaryMessage(result.summary)
+						: errorNotice(result.error);
+			if (notice !== null) new Notice(notice);
 		} finally {
 			this.running = false;
 		}

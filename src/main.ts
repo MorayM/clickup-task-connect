@@ -3,6 +3,7 @@ import { registerCommands } from './commands';
 import type { EngineSettings } from './engine/types';
 import { ObsidianHost } from './obsidian-host';
 import { RefreshRunner } from './refresh-runner';
+import { RefreshScheduler } from './refresh-scheduler';
 import {
 	ClickUpTaskConnectSettings,
 	ClickUpTaskConnectSettingTab,
@@ -14,6 +15,7 @@ export default class ClickUpTaskConnectPlugin extends Plugin {
 	settings!: ClickUpTaskConnectSettings;
 	host!: ObsidianHost;
 	runner!: RefreshRunner;
+	scheduler!: RefreshScheduler;
 	private cacheResolved = false;
 
 	async onload() {
@@ -27,6 +29,8 @@ export default class ClickUpTaskConnectPlugin extends Plugin {
 		);
 		this.addSettingTab(new ClickUpTaskConnectSettingTab(this.app, this));
 		registerCommands(this);
+		this.scheduler = new RefreshScheduler(this);
+		this.scheduler.startAfterLayoutReady();
 	}
 
 	/** A snapshot of the settings for one engine run. */

@@ -39,8 +39,7 @@ export function errorMessage(error: EngineError): string {
 
 /** A notice for a refresh that failed before writing anything. */
 export function errorNotice(error: EngineError): string {
-	const message = errorMessage(error);
-	return `ClickUp: ${message.charAt(0).toLowerCase()}${message.slice(1)}`;
+	return `ClickUp: ${lowerFirst(errorMessage(error))}`;
 }
 
 export function summaryMessage(summary: RefreshSummary): string {
@@ -71,4 +70,45 @@ export function connectionMessage(report: ConnectionReport): string {
 	if ('workspace' in report) return `Connected as ${report.username} to ${report.workspace.name}`;
 	const list = report.workspaces.map((w) => `${w.name} (${w.id})`).join(', ');
 	return `Connected as ${report.username}. Your token can see several workspaces. Set Workspace ID to one of: ${list}`;
+}
+
+type RefreshResult = { ok: true; summary: RefreshSummary } | { ok: false; error: EngineError };
+
+/**
+ * Decides which interval refreshes get a notice: none on success, and each error only once
+ * until a refresh succeeds in between. Runs with no token or before indexing skip silently.
+ */
+export class IntervalNotices {
+	private lastShown: string | null = null;
+
+	noticeFor(result: RefreshResult): string | null {
+		if (!result.ok && (result.error.kind === 'no-token' || result.error.kind === 'indexing')) return null;
+		const problem = intervalProblem(result);
+		if (problem === null) {
+			this.lastShown = null;
+			return null;
+		}
+		if (problem.key === this.lastShown) return null;
+		this.lastShown = problem.key;
+		return problem.notice;
+	}
+}
+
+function intervalProblem(result: RefreshResult): { key: string; notice: string } | null {
+	if (!result.ok) return { key: result.error.kind, notice: errorNotice(result.error) };
+	const { interrupted, scaffoldMissing } = result.summary;
+	if (interrupted) {
+		return {
+			key: `interrupted:${interrupted.kind}`,
+			notice: `ClickUp: stopped checking dropped tasks: ${lowerFirst(errorMessage(interrupted))}`,
+		};
+	}
+	if (scaffoldMissing !== undefined) {
+		return { key: 'scaffold-missing', notice: errorNotice({ kind: 'scaffold-missing', path: scaffoldMissing }) };
+	}
+	return null;
+}
+
+function lowerFirst(text: string): string {
+	return `${text.charAt(0).toLowerCase()}${text.slice(1)}`;
 }
