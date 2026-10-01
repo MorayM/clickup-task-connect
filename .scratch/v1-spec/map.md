@@ -31,7 +31,7 @@ A v1 spec, ready to hand to an implementer, for a plugin that keeps one **task n
 
 ## Not yet specified
 
-_Nothing. The frontier is empty; next step is turning the map into `spec.md`._
+_Nothing. The frontier is empty; the spec is written: [spec.md](spec.md) (ready-for-agent)._
 
 ## Out of scope
 
