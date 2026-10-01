@@ -5,8 +5,8 @@ import { connect } from './connection';
 import type { HostPort } from './host';
 import { normalizeFolder } from './folder';
 import { buildIndex } from './note-index';
-import { applyProperties, deriveState, managedProperties, type ManagedProperties } from './properties';
-import { taskBasename } from './filename';
+import { deriveState, managedProperties } from './properties';
+import { createTaskNote, newNotePath, updateTaskNote } from './task-notes';
 import { DEFAULT_SCAFFOLD, placeholderValues, renderText } from './scaffold';
 import type { EngineSettings, Result } from './types';
 
@@ -20,6 +20,9 @@ export interface WriteFailure {
 export interface RefreshSummary {
 	created: number;
 	updated: number;
+	renamed: number;
+	/** Task IDs claimed by more than one note. Those tasks are left alone. */
+	duplicates: number;
 	failures: WriteFailure[];
 }
 
@@ -40,22 +43,23 @@ export async function refresh(
 	if (!listing.ok) return listing;
 
 	const index = buildIndex(host, folder);
-	const summary: RefreshSummary = { created: 0, updated: 0, failures: [] };
+	const summary: RefreshSummary = { created: 0, updated: 0, renamed: 0, duplicates: 0, failures: [] };
 	const zone = host.timeZone();
+	for (const notes of index.values()) if (notes.length > 1) summary.duplicates++;
 
 	for (const task of listing.value) {
 		const props = managedProperties(task, deriveState(task, user.id), zone);
-		const notes = index.get(props['clickup-id']!) ?? [];
+		const notes = index.get(props['clickup-id']) ?? [];
+		if (notes.length > 1) continue;
 		const existing = notes[0];
-		const path = existing?.path ?? `${folder}/${taskBasename(task.name ?? '', task.id)}.md`;
+		const path = existing?.path ?? newNotePath(folder, props);
 		try {
 			if (existing) {
-				if (await writeProperties(host, existing.path, props)) summary.updated++;
+				const { outcome } = await updateTaskNote(host, existing, props);
+				if (outcome !== 'unchanged') summary[outcome]++;
 			} else {
-				if (!host.exists(folder)) await host.createFolder(folder);
 				const body = renderText(DEFAULT_SCAFFOLD, placeholderValues(props, task.markdown_description ?? ''));
-				await host.createFile(path, body);
-				await writeProperties(host, path, props);
+				await createTaskNote(host, folder, props, body);
 				summary.created++;
 			}
 		} catch (e) {
@@ -63,13 +67,4 @@ export async function refresh(
 		}
 	}
 	return { ok: true, summary };
-}
-
-/** Writes managed properties to a note. Returns whether anything changed. */
-async function writeProperties(host: HostPort, path: string, props: ManagedProperties): Promise<boolean> {
-	let changed = false;
-	await host.processFrontMatter(path, (fm) => {
-		changed = applyProperties(fm, props);
-	});
-	return changed;
 }

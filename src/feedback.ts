@@ -50,6 +50,8 @@ export function summaryMessage(summary: RefreshSummary): string {
 	};
 	add(summary.created, 'new');
 	add(summary.updated, 'updated');
+	add(summary.renamed, 'renamed');
+	add(summary.duplicates, summary.duplicates === 1 ? 'duplicate' : 'duplicates');
 	add(summary.failures.length, 'failed');
 	const lines = [parts.length === 0 ? 'ClickUp: up to date' : `ClickUp: ${parts.join(', ')}`];
 	for (const failure of summary.failures) lines.push(`Couldn't write ${failure.path}: ${failure.message}`);

@@ -15,7 +15,10 @@ export const MANAGED_KEYS = [
 	'clickup-state',
 ] as const;
 
-export type ManagedProperties = Record<(typeof MANAGED_KEYS)[number], string | null>;
+export type ManagedProperties = Record<(typeof MANAGED_KEYS)[number], string | null> & {
+	'clickup-id': string;
+	'clickup-state': TaskState;
+};
 
 const PRIORITY_LABELS = ['urgent', 'high', 'normal', 'low'];
 
