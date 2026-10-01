@@ -2,3 +2,7 @@
 	color: var(--text-error);
 	margin-bottom: var(--size-4-2);
 }
+
+.clickup-task-connect-details {
+	color: var(--text-muted);
+}
