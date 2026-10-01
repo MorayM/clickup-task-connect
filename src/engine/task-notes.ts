@@ -3,6 +3,8 @@
 import { taskBasename } from './filename';
 import type { HostPort, NoteInfo } from './host';
 import { applyProperties, type ManagedProperties } from './properties';
+import { placeholderValues, renderScaffold, type Scaffold } from './scaffold';
+import type { ClickUpTask } from './types';
 
 export type UpdateOutcome = 'renamed' | 'updated' | 'unchanged';
 
@@ -18,22 +20,23 @@ export function newNotePath(folder: string, props: ManagedProperties): string {
 }
 
 /**
- * Creates a task note with `body`, then writes `frontmatter` (from the scaffold) and the
- * managed properties last, so they win. Never writes to an existing file.
+ * Creates a task note from the rendered scaffold, writing the managed properties after the
+ * scaffold's frontmatter so they win. Never writes to an existing file.
  */
 export async function createTaskNote(
 	host: HostPort,
 	folder: string,
+	task: ClickUpTask,
 	props: ManagedProperties,
-	body: string,
-	frontmatter: Record<string, unknown> = {},
+	scaffold: Scaffold,
 ): Promise<string> {
 	const path = newNotePath(folder, props);
 	if (host.exists(path)) throw new PathTakenError(path);
+	const rendered = renderScaffold(scaffold, placeholderValues(task, props, host.now(), host.timeZone()));
 	if (!host.exists(folder)) await host.createFolder(folder);
-	await host.createFile(path, body);
+	await host.createFile(path, rendered.body);
 	await host.processFrontMatter(path, (fm) => {
-		Object.assign(fm, frontmatter);
+		Object.assign(fm, rendered.frontmatter);
 		applyProperties(fm, props);
 	});
 	return path;

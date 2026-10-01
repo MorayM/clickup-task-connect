@@ -10,12 +10,15 @@ export interface ClickUpTaskConnectSettings {
 	apiTokenSecret: string;
 	workspaceId: string;
 	taskNoteFolder: string;
+	/** Blank means the default scaffold. */
+	scaffoldPath: string;
 }
 
 export const DEFAULT_SETTINGS: ClickUpTaskConnectSettings = {
 	apiTokenSecret: '',
 	workspaceId: '',
 	taskNoteFolder: 'ClickUp',
+	scaffoldPath: '',
 };
 
 /** Keeps known keys only, falling back to defaults for anything missing or mistyped. */
@@ -29,6 +32,7 @@ export function readSettings(data: unknown): ClickUpTaskConnectSettings {
 		apiTokenSecret: text('apiTokenSecret'),
 		workspaceId: text('workspaceId'),
 		taskNoteFolder: text('taskNoteFolder'),
+		scaffoldPath: text('scaffoldPath'),
 	};
 }
 
@@ -39,7 +43,7 @@ export function engineSettings(app: App, settings: ClickUpTaskConnectSettings): 
 		token: token || null,
 		workspaceId: settings.workspaceId.trim(),
 		taskNoteFolder: normalizeFolder(settings.taskNoteFolder) ?? '',
-		scaffoldPath: '',
+		scaffoldPath: settings.scaffoldPath.trim(),
 	};
 }
 
@@ -49,6 +53,20 @@ export class ClickUpTaskConnectSettingTab extends PluginSettingTab {
 		private readonly plugin: ClickUpTaskConnectPlugin,
 	) {
 		super(app, plugin);
+	}
+
+	/**
+	 * Warns about a missing note but keeps the value, since the note may arrive later by sync.
+	 * Returning a message from `validate` blocks the framework's save, so save it here first.
+	 */
+	private async validateScaffold(value: string): Promise<string | undefined> {
+		const path = value.trim();
+		if (path === '' || this.app.vault.getFileByPath(path)) return undefined;
+		if (this.plugin.settings.scaffoldPath !== value) {
+			this.plugin.settings.scaffoldPath = value;
+			await this.plugin.saveSettings();
+		}
+		return 'Note not found';
 	}
 
 	private async testConnection(): Promise<void> {
@@ -104,6 +122,17 @@ export class ClickUpTaskConnectSettingTab extends PluginSettingTab {
 							key: 'taskNoteFolder',
 							placeholder: DEFAULT_SETTINGS.taskNoteFolder,
 							validate: (value) => (normalizeFolder(value) === null ? 'Choose a folder' : undefined),
+						},
+					},
+					{
+						name: 'Scaffold note',
+						desc: 'Note used as the starting body for new task notes, with {=ctc:…=} placeholders. Leave blank for the default.',
+						aliases: ['template', 'scaffold', 'placeholder'],
+						control: {
+							type: 'file',
+							key: 'scaffoldPath',
+							filter: (file) => file.extension === 'md',
+							validate: (value) => this.validateScaffold(value),
 						},
 					},
 				],

@@ -7,7 +7,7 @@ import { normalizeFolder } from './folder';
 import { buildIndex } from './note-index';
 import { deriveState, managedProperties } from './properties';
 import { createTaskNote, newNotePath, updateTaskNote } from './task-notes';
-import { DEFAULT_SCAFFOLD, placeholderValues, renderText } from './scaffold';
+import { loadScaffold, type Scaffold } from './scaffold';
 import type { EngineError, EngineSettings, Result } from './types';
 
 export type RefreshMode = 'manual' | 'interval';
@@ -27,6 +27,8 @@ export interface RefreshSummary {
 	/** Task IDs claimed by more than one note. Those tasks are left alone. */
 	duplicates: number;
 	failures: WriteFailure[];
+	/** Set when new notes were skipped because the scaffold note couldn't be read. */
+	scaffoldMissing?: string;
 	/** Why classifying dropped tasks stopped early, if it did. */
 	interrupted?: EngineError;
 }
@@ -62,6 +64,7 @@ export async function refresh(
 		failures: [],
 	};
 	const zone = host.timeZone();
+	let scaffold: Scaffold | null | undefined;
 	for (const notes of index.values()) if (notes.length > 1) summary.duplicates++;
 
 	for (const task of listing.value) {
@@ -75,8 +78,13 @@ export async function refresh(
 				const { outcome } = await updateTaskNote(host, existing, props);
 				if (outcome !== 'unchanged') summary[outcome]++;
 			} else {
-				const body = renderText(DEFAULT_SCAFFOLD, placeholderValues(props, task.markdown_description ?? ''));
-				await createTaskNote(host, folder, props, body);
+				// Loaded on the first create only. A missing scaffold blocks every create in this run.
+				if (scaffold === undefined) scaffold = await loadScaffold(host, settings.scaffoldPath);
+				if (scaffold === null) {
+					summary.scaffoldMissing = settings.scaffoldPath;
+					continue;
+				}
+				await createTaskNote(host, folder, task, props, scaffold);
 				summary.created++;
 			}
 		} catch (e) {

@@ -6,13 +6,19 @@ Spec: `.scratch/v1-spec/spec.md` (Scaffold rendering, Settings schema → Scaffo
 
 **Blocked by:** 01
 
-**Status:** ready-for-agent
+**Status:** resolved
 
-- [ ] **Scaffold note** setting: a `file` control filtered to `.md`, blank by default (blank means the default scaffold). `validate` shows "Note not found" for a missing path but still saves it
-- [ ] Placeholders for the nine property values (`id`, `url`, `title`, `status`, `due`, `priority`, `list`, `parent`, `state`) give exactly the managed property's value
-- [ ] Placeholder-only values: `description` (`markdown_description` verbatim, images left as remote links), `space`, `folder`, `tags` (comma-separated), `assignees` (display names, comma-separated), `creator`, `created`, `start`, `today` (dates as local `YYYY-MM-DD`) and `raw` (task JSON in a fenced `json` block)
-- [ ] Unknown placeholder names are left as written. Known names with no value become an empty string
-- [ ] Scaffold frontmatter is parsed as YAML, and placeholders are filled only inside string values (values containing `:`, `#` or quotes stay valid YAML). Managed properties are written last and win on a name clash
-- [ ] Anything that isn't a `{=ctc:…=}` token (e.g. Templater syntax) is copied as-is
-- [ ] If the scaffold path is set but the note is missing or unreadable, a refresh creates no notes, still updates existing ones, and reports "Scaffold note not found: <path>" once
-- [ ] Engine tests cover body and frontmatter rendering, YAML-hostile values, unknown and empty placeholders, the clash rule, and the missing scaffold
+- [x] **Scaffold note** setting: a `file` control filtered to `.md`, blank by default (blank means the default scaffold). `validate` shows "Note not found" for a missing path but still saves it
+- [x] Placeholders for the nine property values (`id`, `url`, `title`, `status`, `due`, `priority`, `list`, `parent`, `state`) give exactly the managed property's value
+- [x] Placeholder-only values: `description` (`markdown_description` verbatim, images left as remote links), `space`, `folder`, `tags` (comma-separated), `assignees` (display names, comma-separated), `creator`, `created`, `start`, `today` (dates as local `YYYY-MM-DD`) and `raw` (task JSON in a fenced `json` block)
+- [x] Unknown placeholder names are left as written. Known names with no value become an empty string
+- [x] Scaffold frontmatter is parsed as YAML, and placeholders are filled only inside string values (values containing `:`, `#` or quotes stay valid YAML). Managed properties are written last and win on a name clash
+- [x] Anything that isn't a `{=ctc:…=}` token (e.g. Templater syntax) is copied as-is
+- [x] If the scaffold path is set but the note is missing or unreadable, a refresh creates no notes, still updates existing ones, and reports "Scaffold note not found: <path>" once
+- [x] Engine tests cover body and frontmatter rendering, YAML-hostile values, unknown and empty placeholders, the clash rule, and the missing scaffold
+
+## Comments
+
+- The declarative `validate` callback rejects (doesn't persist) any value it returns a message for. To warn "Note not found" *and* keep the value, the scaffold validator saves the setting itself before returning the message.
+- A scaffold whose frontmatter isn't valid YAML (or isn't a mapping) is treated like a missing scaffold: no creates, same message.
+- `space`: ClickUp's task payload usually carries only `space.id`, not its name, so `{=ctc:space=}` is empty unless the API includes a name. Fetching the space would cost an extra request per new note; left out pending a decision.

@@ -57,6 +57,9 @@ export function summaryMessage(summary: RefreshSummary): string {
 	add(summary.duplicates, summary.duplicates === 1 ? 'duplicate' : 'duplicates');
 	add(summary.failures.length, 'failed');
 	const lines = [parts.length === 0 ? 'ClickUp: up to date' : `ClickUp: ${parts.join(', ')}`];
+	if (summary.scaffoldMissing !== undefined) {
+		lines.push(`Scaffold note not found: ${summary.scaffoldMissing}. No new notes were created.`);
+	}
 	if (summary.interrupted) {
 		lines.push(`Stopped checking dropped tasks: ${errorMessage(summary.interrupted)}`);
 	}
