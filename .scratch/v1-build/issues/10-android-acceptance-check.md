@@ -4,11 +4,15 @@
 
 **Blocked by:** 06, 08
 
-**Status:** ready-for-human
+**Status:** resolved
 
-- [ ] Install the built plugin in the vault on an Android device and enter the API token (secret storage, per device)
-- [ ] **Test connection** succeeds
-- [ ] A manual **Refresh tasks** creates and updates task notes
-- [ ] **Import task by ID** imports a closed task
-- [ ] An interval refresh runs in the background
-- [ ] Record the outcome (device, Obsidian version) under a `## Comments` heading. If anything fails, open a follow-up ticket
+- [x] Install the built plugin in the vault on an Android device and enter the API token (secret storage, per device)
+- [x] **Test connection** succeeds
+- [x] A manual **Refresh tasks** creates and updates task notes
+- [x] **Import task by ID** imports a closed task
+- [x] An interval refresh runs in the background
+- [x] Record the outcome (device, Obsidian version) under a `## Comments` heading. If anything fails, open a follow-up ticket
+
+## Comments
+
+- 2026-10-01: Moray Macdonald reported all Android checks passing: Test connection, manual refresh, import of a closed task, and an interval refresh, via `requestUrl` against api.clickup.com. Device model and Obsidian version weren't recorded.
