@@ -1,0 +1,16 @@
+filters:
+  and:
+    - file.inFolder("ClickUp")
+    - 'note["clickup-state"] == "assigned"'
+    - 'date(note["clickup-due"]) == today()'
+views:
+  - type: table
+    name: Due today
+    order:
+      - file.name
+      - clickup-status
+      - clickup-priority
+      - clickup-list
+    sort:
+      - property: file.name
+        direction: ASC

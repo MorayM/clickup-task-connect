@@ -1,0 +1,16 @@
+filters:
+  and:
+    - file.inFolder("ClickUp")
+    - 'note["clickup-state"] == "assigned"'
+views:
+  - type: table
+    name: My open tasks
+    order:
+      - file.name
+      - clickup-status
+      - clickup-due
+      - clickup-priority
+      - clickup-list
+    sort:
+      - property: clickup-due
+        direction: ASC
