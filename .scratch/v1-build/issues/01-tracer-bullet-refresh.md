@@ -6,16 +6,16 @@ Spec: `.scratch/v1-spec/spec.md` (Architecture, Managed properties, Refresh algo
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** resolved
 
-- [ ] Vitest is a dev dependency with an `npm test` script, and CI runs it alongside lint
-- [ ] The task-note engine exposes `refresh` and depends only on a single host port (ClickUp HTTP + vault operations). Engine modules have no runtime `obsidian` import
-- [ ] An in-memory fake host (canned ClickUp responses by URL, an in-memory vault with `processFrontMatter` and rename semantics) drives the engine tests
-- [ ] The Obsidian adapter implements the host port with `requestUrl` (`throw: false`), `processFrontMatter`, `FileManager.renameFile` and the metadata cache
-- [ ] Settings: **API token** via `SecretComponent` (`data.json` stores `apiTokenSecret` only; the old `apiToken` field is removed), **Workspace ID** (blank means the only workspace) and **Task note folder** (default `ClickUp`, rejects empty and root, checked again on read), all via `getSettingDefinitions()`
-- [ ] **Refresh tasks** command (id `refresh-tasks`) and ribbon icon (`refresh-cw`, "Refresh ClickUp tasks")
-- [ ] The refresh resolves the user and workspace, fetches a single page of assigned tasks, and creates missing task notes at the top level of the folder (creating the folder if needed) using `<name> (<id>).md` and the default scaffold
-- [ ] All nine `clickup-*` keys are written with the specified formats (`clickup-due` local `YYYY-MM-DD`, priority label, list name, bare parent ID, state `assigned`). Empty values are null. Managed properties are written after the scaffold, so they win
-- [ ] A second refresh updates existing notes found by `String(clickup-id).trim()` in the folder and its subfolders, without changing the body or non-managed keys, and restores any managed key the user deleted
-- [ ] A manual refresh shows a summary notice with counts of new and updated notes
-- [ ] Engine tests cover: first refresh creates notes, second refresh updates them in place, user frontmatter is preserved, and a deleted managed key is restored
+- [x] Vitest is a dev dependency with an `npm test` script, and CI runs it alongside lint
+- [x] The task-note engine exposes `refresh` and depends only on a single host port (ClickUp HTTP + vault operations). Engine modules have no runtime `obsidian` import
+- [x] An in-memory fake host (canned ClickUp responses by URL, an in-memory vault with `processFrontMatter` and rename semantics) drives the engine tests
+- [x] The Obsidian adapter implements the host port with `requestUrl` (`throw: false`), `processFrontMatter`, `FileManager.renameFile` and the metadata cache
+- [x] Settings: **API token** via `SecretComponent` (`data.json` stores `apiTokenSecret` only; the old `apiToken` field is removed), **Workspace ID** (blank means the only workspace) and **Task note folder** (default `ClickUp`, rejects empty and root, checked again on read), all via `getSettingDefinitions()`
+- [x] **Refresh tasks** command (id `refresh-tasks`) and ribbon icon (`refresh-cw`, "Refresh ClickUp tasks")
+- [x] The refresh resolves the user and workspace, fetches a single page of assigned tasks, and creates missing task notes at the top level of the folder (creating the folder if needed) using `<name> (<id>).md` and the default scaffold
+- [x] All nine `clickup-*` keys are written with the specified formats (`clickup-due` local `YYYY-MM-DD`, priority label, list name, bare parent ID, state `assigned`). Empty values are null. Managed properties are written after the scaffold, so they win
+- [x] A second refresh updates existing notes found by `String(clickup-id).trim()` in the folder and its subfolders, without changing the body or non-managed keys, and restores any managed key the user deleted
+- [x] A manual refresh shows a summary notice with counts of new and updated notes
+- [x] Engine tests cover: first refresh creates notes, second refresh updates them in place, user frontmatter is preserved, and a deleted managed key is restored
