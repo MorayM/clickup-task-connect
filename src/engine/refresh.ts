@@ -8,7 +8,7 @@ import { buildIndex } from './note-index';
 import { deriveState, managedProperties } from './properties';
 import { createTaskNote, newNotePath, updateTaskNote } from './task-notes';
 import { DEFAULT_SCAFFOLD, placeholderValues, renderText } from './scaffold';
-import type { EngineSettings, Result } from './types';
+import type { EngineError, EngineSettings, Result } from './types';
 
 export type RefreshMode = 'manual' | 'interval';
 
@@ -21,10 +21,18 @@ export interface RefreshSummary {
 	created: number;
 	updated: number;
 	renamed: number;
+	closed: number;
+	notAssigned: number;
+	gone: number;
 	/** Task IDs claimed by more than one note. Those tasks are left alone. */
 	duplicates: number;
 	failures: WriteFailure[];
+	/** Why classifying dropped tasks stopped early, if it did. */
+	interrupted?: EngineError;
 }
+
+/** States whose notes are never fetched one by one. */
+const SETTLED_STATES: unknown[] = ['closed', 'not-assigned', 'gone'];
 
 export async function refresh(
 	host: HostPort,
@@ -43,7 +51,16 @@ export async function refresh(
 	if (!listing.ok) return listing;
 
 	const index = buildIndex(host, folder);
-	const summary: RefreshSummary = { created: 0, updated: 0, renamed: 0, duplicates: 0, failures: [] };
+	const summary: RefreshSummary = {
+		created: 0,
+		updated: 0,
+		renamed: 0,
+		closed: 0,
+		notAssigned: 0,
+		gone: 0,
+		duplicates: 0,
+		failures: [],
+	};
 	const zone = host.timeZone();
 	for (const notes of index.values()) if (notes.length > 1) summary.duplicates++;
 
@@ -63,8 +80,41 @@ export async function refresh(
 				summary.created++;
 			}
 		} catch (e) {
-			summary.failures.push({ path, message: e instanceof Error ? e.message : String(e) });
+			summary.failures.push({ path, message: errorText(e) });
+		}
+	}
+
+	// Dropped tasks: notes still marked assigned whose task wasn't listed. Classify one at a time.
+	const listed = new Set(listing.value.map((task) => String(task.id)));
+	const dropped = [...index.entries()]
+		.filter(([id, notes]) => notes.length === 1 && !listed.has(id))
+		.map(([id, notes]) => ({ id, note: notes[0]! }))
+		.filter(({ note }) => !SETTLED_STATES.includes(note.frontmatter?.['clickup-state']))
+		.sort((a, b) => a.note.path.localeCompare(b.note.path));
+	for (const { id, note } of dropped) {
+		const fetched = await client.getTask(id);
+		if (!fetched.ok && fetched.error.kind !== 'not-found') {
+			summary.interrupted = fetched.error;
+			break;
+		}
+		try {
+			if (!fetched.ok) {
+				await updateTaskNote(host, note, { 'clickup-state': 'gone' });
+				summary.gone++;
+				continue;
+			}
+			const state = deriveState(fetched.value, user.id);
+			const { outcome } = await updateTaskNote(host, note, managedProperties(fetched.value, state, zone));
+			if (state === 'closed') summary.closed++;
+			else if (state === 'not-assigned') summary.notAssigned++;
+			else if (outcome !== 'unchanged') summary[outcome]++;
+		} catch (e) {
+			summary.failures.push({ path: note.path, message: errorText(e) });
 		}
 	}
 	return { ok: true, summary };
+}
+
+function errorText(e: unknown): string {
+	return e instanceof Error ? e.message : String(e);
 }

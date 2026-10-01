@@ -58,15 +58,34 @@ export class ClickUpClient {
 		return { ok: true, value: all };
 	}
 
-	private async get(url: string): Promise<Call<HttpResponse>> {
-		let res: HttpResponse;
-		try {
-			res = await this.host.request({ url, headers: { Authorization: this.token } });
-		} catch {
-			return { ok: false, error: { kind: 'offline' } };
+	/**
+	 * One task by ID. 429, network errors and a rejected token keep their own errors;
+	 * any other failure means the task is gone or not accessible (`not-found`).
+	 */
+	async getTask(id: string): Promise<Call<ClickUpTask>> {
+		const res = await this.send(`${BASE}/task/${encodeURIComponent(id)}?include_markdown_description=true`);
+		if (res === null) return { ok: false, error: { kind: 'offline' } };
+		if (res.status === 200) return { ok: true, value: res.json as ClickUpTask };
+		if (res.status === 429 || (res.status === 401 && ecode(res) === 'OAUTH_025')) {
+			return { ok: false, error: classify(res, this.host.now()) };
 		}
+		return { ok: false, error: { kind: 'not-found' } };
+	}
+
+	private async get(url: string): Promise<Call<HttpResponse>> {
+		const res = await this.send(url);
+		if (res === null) return { ok: false, error: { kind: 'offline' } };
 		if (res.status === 200) return { ok: true, value: res };
 		return { ok: false, error: classify(res, this.host.now()) };
+	}
+
+	/** The response, or null when ClickUp couldn't be reached. */
+	private async send(url: string): Promise<HttpResponse | null> {
+		try {
+			return await this.host.request({ url, headers: { Authorization: this.token } });
+		} catch {
+			return null;
+		}
 	}
 }
 
